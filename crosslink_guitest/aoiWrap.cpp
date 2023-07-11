@@ -127,6 +127,7 @@ void aoiWrap::doinit(struct aoi_space* space,int idx) {
 	srand((unsigned)time(NULL));
 	for (auto iter = allObjs.begin(); iter != allObjs.end(); iter++) {
 		auto obj = iter->second;
+
 		if (idx == -1) {
 			doinit_one(space, obj->objID);
 			aoi_enter(space, iter->first, obj->pos, obj->mode);
@@ -143,7 +144,9 @@ void aoiWrap::doinit(struct aoi_space* space,int idx) {
 }
 
 void showOne( int i, int posX, int posY) {
-	circle(posX, int(posY), 1);
+	putpixel(posX, posY, RGB(255,128,255));
+	//circle(posX, int(posY), 1);
+
 
 	switch (i % 4) {
 	case 0:
@@ -228,7 +231,7 @@ void aoiWrap::manualMain(struct aoi_space* aoi) {
 			frameStartTk = getMS();
 			std::cout << "--------------------> draw cost ms:" << drawCost << " sleepCost:" << 
 				sleepCost << " leftCost:" << leftCost<<" aoiCost:" << aoiCost << " totalCost:" << totalCost
-				<< "moveCount:" << moveCount << std::endl;
+				<< " moveCount:" << moveCount << std::endl;
 			moveCount = 0;
 			drawCost = 0;
 			sleepCost = 0;
@@ -316,7 +319,9 @@ void aoiWrap::manualMain(struct aoi_space* aoi) {
 				aoi_client::getInst()->sync_pos(pobj->pos);
 				//printf("%d was pressed (%f,%f)\r\n", key,OBJ[id].pos[0], key, OBJ[id].pos[1]);
 				//dumpall();
-
+				if (key == 115) {
+					aoi_enter(aoi, select_idx, pobj->pos, pobj->mode);
+				}
 				aoi_move(aoi, select_idx, pobj->pos);
 			}
 			//}
