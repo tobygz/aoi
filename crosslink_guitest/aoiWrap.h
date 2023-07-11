@@ -88,7 +88,7 @@ class aoiWrap {
 	 void update_obj(struct aoi_space* aoi, uint32_t id);
 
 public:
-	aoiWrap(int size = 3000);
+	aoiWrap(int size = 10);
 	int getObjCount();
 	OBJECT* getObj(int id);
 	void addOneEnterAOI();

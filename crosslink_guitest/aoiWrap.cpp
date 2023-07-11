@@ -8,7 +8,7 @@
 
 #pragma warning(disable:4996)
 #define UNSET_POS_VAL -2000
-//#define SHOW_CELL_FONT true
+#define SHOW_CELL_FONT true
 
 aoi_client* aoi_client::_inst;
 
@@ -54,6 +54,7 @@ static void
 moveAOI(void* ud, uint32_t watcher, uint32_t marker,float newPos[3]) {
 	moveCount++;
 	aoiWrap* p = (aoiWrap*)ud;
+	
 	if (watcher != aoi_client::getInst()->get_sel_idx()) {
 		return;
 	}
@@ -144,8 +145,8 @@ void aoiWrap::doinit(struct aoi_space* space,int idx) {
 }
 
 void showOne( int i, int posX, int posY) {
-	putpixel(posX, posY, RGB(255,128,255));
-	//circle(posX, int(posY), 1);
+	putpixel(posX, posY, RGB(255,200,255));
+	circle(posX, int(posY), 1);
 
 
 	switch (i % 4) {
@@ -301,6 +302,7 @@ void aoiWrap::manualMain(struct aoi_space* aoi) {
 				//clearSelSet();
 				aoi_client::getInst()->update_sel_idx(select_idx);
 				drawMonitorText();
+				pobj = getObj(select_idx);
 			}
 			//adajust pos
 			if (pobj) {
