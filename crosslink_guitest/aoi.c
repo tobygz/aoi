@@ -7,7 +7,7 @@
 #include "aoi.h"
 
 #define INVALID_ID (~0)
-#define PRE_ALLOC 16
+#define PRE_ALLOC 3200
 //#define PRE_ALLOC 32
 #define MODE_WATCHER 1
 #define MODE_MARKER 2
@@ -53,7 +53,7 @@ typedef struct aoi_space {
 	void *alloc_ud;
 	enterAOI_Callback cb_enterAOI;
 	leaveAOI_Callback cb_leaveAOI;
-	leaveAOI_Callback cb_moveAOI;
+	moveAOI_Callback cb_moveAOI;
 	void *cb_ud;
 	aoi_set *set1;
 	aoi_set *set2;
@@ -465,10 +465,10 @@ enterAOI(aoi_space *aoi,aoi_object *watcher,aoi_object *marker) {
 		return;
 	}
 	if (watcher->mode & MODE_WATCHER) {
-		aoi->cb_enterAOI(aoi->cb_ud,watcher->id,marker->id);
+		aoi->cb_enterAOI(aoi->cb_ud,watcher->id,marker->id, marker->pos);
 	}
 	if (marker->mode & MODE_WATCHER) {
-		aoi->cb_enterAOI(aoi->cb_ud,marker->id,watcher->id);
+		aoi->cb_enterAOI(aoi->cb_ud,marker->id,watcher->id, marker->pos);
 	}
 }
 
@@ -635,6 +635,7 @@ aoi_move(aoi_space *aoi,uint32_t id,float pos[3]) {
 	if (obj == NULL) {
 		return;
 	}
+	//todo, maybe profile
 	if (memcmp(obj->pos,pos,3*sizeof(float)) == 0) {
 		return;
 	}
@@ -642,8 +643,6 @@ aoi_move(aoi_space *aoi,uint32_t id,float pos[3]) {
 	int i;
 	aoi_object *prev,*next;
 	get_view(aoi,obj,aoi->set1,aoi->view_size);
-
-
 
 	// x direction
 	if (pos[0] < obj->pos[0]) {
@@ -723,8 +722,6 @@ aoi_move(aoi_space *aoi,uint32_t id,float pos[3]) {
 		enterAOI(aoi,obj,temp);
 	}
 
-
-	//todo, check dup;
 	// send move to others; [id move] ->set1 & set2;
 	for (i = 0; i < aoi->set1->number; i++) {
 		aoi_object* temp = aoi->set1->slot[i];
@@ -759,7 +756,7 @@ aoi_change_mode(aoi_space *aoi,uint32_t id,const char *modestring) {
 				continue;
 			}
 			if (obj->mode & MODE_WATCHER) {
-				aoi->cb_enterAOI(aoi->cb_ud,obj->id,temp->id);
+				aoi->cb_enterAOI(aoi->cb_ud,obj->id,temp->id,temp->pos);
 			}
 		}
 	}

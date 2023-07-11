@@ -9,7 +9,7 @@
 #include <stdint.h>
 
 typedef void * (*aoi_Alloc)(void *ud, void * ptr, size_t sz);
-typedef void (*enterAOI_Callback)(void *ud,uint32_t watcher, uint32_t marker);
+typedef void (*enterAOI_Callback)(void *ud,uint32_t watcher, uint32_t marker, float pos[3]);
 typedef void (*leaveAOI_Callback)(void *ud,uint32_t watcher, uint32_t marker);
 typedef void (*moveAOI_Callback)(void* ud, uint32_t watcher, uint32_t marker, float pos[3]);
 
