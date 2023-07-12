@@ -8,7 +8,7 @@
 
 #pragma warning(disable:4996)
 #define UNSET_POS_VAL -2000
-#define SHOW_CELL_FONT true
+//#define SHOW_CELL_FONT true
 
 aoi_client* aoi_client::_inst;
 
@@ -145,8 +145,8 @@ void aoiWrap::doinit(struct aoi_space* space,int idx) {
 }
 
 void showOne( int i, int posX, int posY) {
-	putpixel(posX, posY, RGB(255,200,255));
-	circle(posX, int(posY), 1);
+	//circle(posX, int(posY), 1);
+	putpixel(posX, posY, RGB(255, 200, 255));
 
 
 	switch (i % 4) {
@@ -163,11 +163,12 @@ void showOne( int i, int posX, int posY) {
 		setfillcolor(RGB(183, 49, 206));
 		break;
 	}
+	auto viewsize = aoi_client::getInst()->getViewSize();
 	if (i == aoi_client::getInst()->get_sel_idx()) {
 		//draw view size
-		rectangle(posX - view_size[0], posY - view_size[1], posX + view_size[0], posY + view_size[1]);
-		//fillcircle(int(OBJ[i].pos[0]), int(OBJ[i].pos[1]), 2);
-		//circle(int(OBJ[i].pos[0]), int(OBJ[i].pos[1]), view_size[0]);
+		circle(posX, int(posY), 1);
+		fillcircle(int(posX), int(posY), 2);
+		rectangle(posX - viewsize[0], posY - viewsize[1], posX + viewsize[0], posY + viewsize[1]);
 	}
 #ifdef SHOW_CELL_FONT
 	WCHAR info[16];
@@ -190,7 +191,9 @@ void aoiWrap::drawMonitorText() {
 	roundrect(810, 700, 1200, 800, 1, 1);
 	//1200, 800
 	WCHAR info[128];
-	wsprintf(info, _T("SEL:%d, Count: %d FC: %d AOICost:%d"), aoi_client::getInst()->get_sel_idx(), getObjCount(), rsFrameCount, aoiCost);
+	wsprintf(info, _T("SEL:%d, Count: %d FC: %d AOICost:%d ViewCount:%d"), aoi_client::getInst()->get_sel_idx(), 
+		getObjCount(), rsFrameCount, aoiCost,
+		aoi_client::getInst()->objCount());
 	setbkmode(OPAQUE);
 	setbkmode(TRANSPARENT);
 	settextcolor(RGB(0, 0, 0));
@@ -204,9 +207,11 @@ void aoiWrap::drawMonitorText() {
 
 void aoiWrap::showObjs(struct aoi_space* space) {
 	int i = 0;
+	//*
 	for (auto iter = allObjs.begin(); iter != allObjs.end(); iter++) {
 		showOne(iter->first, iter->second->pos[0], iter->second->pos[1]);
 	}
+	//*/
 	FlushBatchDraw();
 }
 
@@ -227,18 +232,25 @@ void aoiWrap::manualMain(struct aoi_space* aoi) {
 
 	while (true) {
 		if (getMS() - frameStartTk > 1000) {
+			drawMonitorText();
 			rsFrameCount = frameCount;
 			frameCount = 0;
 			frameStartTk = getMS();
+			int viewCount = aoi_client::getInst()->objCount();
 			std::cout << "--------------------> draw cost ms:" << drawCost << " sleepCost:" << 
 				sleepCost << " leftCost:" << leftCost<<" aoiCost:" << aoiCost << " totalCost:" << totalCost
-				<< " moveCount:" << moveCount << std::endl;
+				<< " moveCount:" << moveCount << " viewCount:"<< viewCount 
+				<< " cook.ct:"<<my_cookie.count 
+				<< " cook.current:"<< my_cookie.current 
+				<<" cook.max:" << my_cookie.max
+				<< std::endl;
 			moveCount = 0;
 			drawCost = 0;
 			sleepCost = 0;
 			leftCost = 0;
 			aoiCost = 0;
 			totalCost = 0;
+			
 		}
 		frameCount++;
 		long sms = getMS();
@@ -256,7 +268,7 @@ void aoiWrap::manualMain(struct aoi_space* aoi) {
 		sms = getMS();
 		clearroundrect(0, 0, RECT_X_W, RECT_Y_H, 1, 1);
 		roundrect(0, 0, RECT_X_W, RECT_Y_H, 1, 1);
-		drawMonitorText();
+		
 		showObjs(aoi);
 		aoi_client::getInst()->drawMonitorMapView();
 		drawCost += getMS() - sms;
@@ -301,7 +313,7 @@ void aoiWrap::manualMain(struct aoi_space* aoi) {
 				select_idx = getRandIdx();
 				//clearSelSet();
 				aoi_client::getInst()->update_sel_idx(select_idx);
-				drawMonitorText();
+				//drawMonitorText();
 				pobj = getObj(select_idx);
 			}
 			//adajust pos
@@ -334,12 +346,17 @@ void aoiWrap::manualMain(struct aoi_space* aoi) {
 }
 
 
-aoiWrap::aoiWrap(int size) {
+aoiWrap::aoiWrap(int size, float mapsize[3], float viewsize[3]) {
 	for (int i = 0; i < size; i++) {
 		OBJECT* op = new OBJECT;
 		op->objID = i;
 		allObjs.insert(std::make_pair<>(i, op));
 	}
+	for (int i = 0; i < 3; i++) {
+		map_size[i] = mapsize[i];
+		view_size[i] = view_size[i];
+	}
+	aoi_client::getInst()->setViewSize(viewsize);
 }
 int aoiWrap::getObjCount() {
 	return allObjs.size();
@@ -382,6 +399,7 @@ void aoiWrap::decOne() {
 	int idx = getRandIdx();
 	if (allObjs.count(idx)) {
 		auto iter = allObjs.find(idx);
+		aoi_leave(this->aoi, iter->second->objID);
 		delete iter->second;
 		allObjs.erase(iter);
 		printf("remove idx: %d\r\n", idx);
@@ -412,12 +430,11 @@ void* aoiWrap::my_alloc(void* ud, void* ptr, size_t sz) {
 }
 
 void aoiWrap::Exec(){
-	struct alloc_cookie cookie = {0,0,0};
 	initgraph(1200, 800, SHOWCONSOLE);
 	setbkcolor(RGB(128, 128, 128));
 	cleardevice();
 
-	aoi = aoi_create(my_alloc,&cookie,map_size,view_size,enterAOI,leaveAOI, moveAOI,this);
+	aoi = aoi_create(my_alloc,&my_cookie,map_size,view_size,enterAOI,leaveAOI, moveAOI,this);
 	doinit(aoi);
 	
 	manualMain(aoi);

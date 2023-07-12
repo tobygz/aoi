@@ -30,7 +30,8 @@ struct obj_info {
 	float newpos[3];
 };
 
-static float view_size[3] = { 100,100,100 };
+//todo delete view_size
+//static float view_size[3] = { 100,100,100 };
 static void showOne(int i, int posX, int posY);
 
 class aoi_client {
@@ -38,6 +39,7 @@ class aoi_client {
 	std::map<int, obj_info> all_obj;
 	int select_idx = 1;
 	float mypos[3];
+	float view_size[3] = { 100,100,100 };
 public:
 	static aoi_client* getInst() {
 		if (!_inst) {
@@ -45,9 +47,19 @@ public:
 		}
 		return _inst;
 	}
-
+	void setViewSize(float viewsize[3]) {
+		for (int i = 0; i < 3; i++) {
+			view_size[i] = viewsize[i];
+		}
+	}
+	float* getViewSize() {
+		return view_size;
+	}
 	void clear() {
 		all_obj.clear();
+	}
+	int objCount() {
+		return all_obj.size();
 	}
 	bool objInsight(int oid) {
 		return all_obj.count(oid) != 0;
@@ -66,14 +78,15 @@ public:
 		}
 	}
 };
-
+static float g_view_size[3] = { 100,100,100 };
+static float g_map_size[3] = { RECT_X_W,RECT_Y_H,100 };
 class aoiWrap {
 	private:
 
-	//struct OBJECT OBJ[MAX_SIZE];
 	std::map<int, OBJECT*> allObjs;
-
+	alloc_cookie my_cookie = { 0,0,0 };
 	 float map_size[3] = { RECT_X_W,RECT_Y_H,100};
+	 float view_size[3] = { 100,100,100 };
 	 
 	 struct alloc_cookie cookie = { 0,0,0 };
 	 struct aoi_space *aoi;
@@ -88,7 +101,7 @@ class aoiWrap {
 	 void update_obj(struct aoi_space* aoi, uint32_t id);
 
 public:
-	aoiWrap(int size = 10);
+	aoiWrap(int size = 10, float mapsize[3] = g_map_size, float viewsize[3] = g_view_size);
 	int getObjCount();
 	OBJECT* getObj(int id);
 	void addOneEnterAOI();
